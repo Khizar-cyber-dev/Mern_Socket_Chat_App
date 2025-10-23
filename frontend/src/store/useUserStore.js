@@ -77,7 +77,7 @@ export const useUserStore = create((set, get) => ({
     handleSocialLogin: async (provider) => {
         set({ loading: true });
         try {
-            const oAuthUrl = `${SERVER_URL}/${provider}`;
+            const oAuthUrl = `${SERVER_URL}/auth/${provider}`;
             window.location.href = oAuthUrl;
         } catch (error) {
             console.log(error);

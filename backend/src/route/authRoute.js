@@ -9,6 +9,9 @@ import {
 } from "../controller/authController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { generateToken, setTokenCookies } from "../lib/Token&Cookies.js";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const router = Router();
 

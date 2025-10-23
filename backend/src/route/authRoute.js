@@ -40,12 +40,15 @@ router.get("/github", passport.authenticate("github", { scope: ["read:user", "us
 
 router.get(
   "/github/callback",
-  passport.authenticate("github", { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=github` }),
+  passport.authenticate("github", { session: false }),
   (req, res) => {
+    console.log("✅ GitHub User:", req.user);  
+
     const { accessToken, refreshToken } = generateToken({ id: req.user._id });
     setTokenCookies(res, accessToken, refreshToken);
     res.redirect(`${process.env.CLIENT_URL}/dashboard`);
   }
 );
+
 
 export default router;

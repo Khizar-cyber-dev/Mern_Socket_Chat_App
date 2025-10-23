@@ -15,7 +15,7 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: `${callbackBase}/google/callback`,
     },
-    async (profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value;
         let user = await User.findOne({ email });
@@ -47,7 +47,7 @@ passport.use(
       callbackURL: `${callbackBase}/github/callback`,
       scope: ["user:email"],
     },
-    async (profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         const email =
           profile.emails?.[0]?.value || `${profile.username}@github.com`;

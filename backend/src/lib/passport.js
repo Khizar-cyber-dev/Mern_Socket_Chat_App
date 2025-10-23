@@ -46,12 +46,23 @@ passport.use(
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: `${callbackBase}/github/callback`,
       scope: ["read:user", "user:email"],
-      userProfileURL: "https://api.github.com/user",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email =
-          profile.emails?.[0]?.value || `${profile.username}@github.com`;
+        let email = profile.emails?.[0]?.value;
+
+        if (!email) {
+          const res = await fetch("https://api.github.com/user/emails", {
+            headers: { Authorization: `token ${accessToken}` }
+          });
+          const emails = await res.json();
+          email = emails.find(e => e.primary && e.verified)?.email;
+        }
+
+        if (!email) {
+          return done(new Error("GitHub email not available. Make email public."), null);
+        }
+
         let user = await User.findOne({ email });
 
         if (!user) {

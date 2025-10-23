@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import axios from '../lib/axios';
+import axios, { SERVER_URL } from '../lib/axios';
 import { toast } from 'react-hot-toast';
 
 export const useUserStore = create((set, get) => ({
@@ -77,7 +77,7 @@ export const useUserStore = create((set, get) => ({
     handleSocialLogin: async (provider) => {
         set({ loading: true });
         try {
-            const oAuthUrl = `http://localhost:5000/api/auth/${provider}`;
+            const oAuthUrl = `${SERVER_URL}/${provider}`;
             window.location.href = oAuthUrl;
         } catch (error) {
             console.log(error);

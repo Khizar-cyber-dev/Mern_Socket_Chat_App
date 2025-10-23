@@ -45,30 +45,37 @@ passport.use(
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: `${callbackBase}/github/callback`,
-      scope: ["read:user", "user:email"],
+      scope: ["user:email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        // Try email from profile first
         let email = profile.emails?.[0]?.value;
 
+        // Fetch emails if missing
         if (!email) {
-          const res = await fetch("https://api.github.com/user/emails", {
-            headers: { Authorization: `token ${accessToken}` }
+          const response = await fetch("https://api.github.com/user/emails", {
+            headers: {
+              Authorization: `token ${accessToken}`,
+              "User-Agent": "backend",
+            },
           });
-          const emails = await res.json();
-          email = emails.find(e => e.primary && e.verified)?.email;
+
+          const emails = await response.json();
+          email =
+            emails.find((e) => e.primary && e.verified)?.email ||
+            emails[0]?.email;
         }
 
         if (!email) {
-          return done(new Error("GitHub email not available. Make email public."), null);
+          return done(new Error("GitHub email is required but not found"), null);
         }
 
         let user = await User.findOne({ email });
-
         if (!user) {
           user = await User.create({
             fullname: profile.displayName || profile.username,
-            username: profile.username,
+            username: profile.username || email.split("@")[0],
             email,
             provider: "github",
             providerId: profile.id,
@@ -78,16 +85,17 @@ passport.use(
 
         return done(null, user);
       } catch (err) {
+        console.error("GitHub Strategy Error:", err.message);
         return done(err, null);
       }
     }
   )
 );
 
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
-});
+// passport.serializeUser((user, done) => done(null, user.id));
+// passport.deserializeUser(async (id, done) => {
+//   const user = await User.findById(id);
+//   done(null, user);
+// });
 
 export default passport;

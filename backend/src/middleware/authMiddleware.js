@@ -1,20 +1,19 @@
 import { verifyToken } from "../lib/Token&Cookies.js";
 import User from "../model/User.js";
 
-export const authMiddleware = async () => {
+export const authMiddleware = async (req, res, next) => {
     try {
         const accessToken = req.cookies.accessToken;
         if(!accessToken){
-            console.log("Acces Token is not Found");
             return res.status(401).json({ message: 'Acces token is not found. '})
         }
         try {
-            const decoded = verifyToken(accessToken, access);
+            const decoded = verifyToken(accessToken, 'access');
             const user = await User.findOne(decoded.userId).select("-password");
             if (!user) {
+                console.log('User not found.')
 				return res.status(401).json({ message: "User not found" });
 			}
-
 			req.user = user;
 
 			next();

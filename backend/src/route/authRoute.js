@@ -42,7 +42,7 @@ router.get(
   "/github/callback",
   passport.authenticate("github", { session: false }),
   (req, res) => {
-    console.log("✅ GitHub User:", req.user);  
+    console.log("GitHub User:", req.user);  
 
     const { accessToken, refreshToken } = generateToken({ id: req.user._id });
     setTokenCookies(res, accessToken, refreshToken);

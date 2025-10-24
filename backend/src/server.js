@@ -40,18 +40,15 @@ app.use(passport.initialize());
 
 app.use("/api/auth", authRoutes);
 
-const clientDistPath = path.join(__dirname, "..", "..", "frontend", "dist");
-app.use(express.static(clientDistPath));
-console.log("Serving static files from:", clientDistPath);
+if(process.env.NODE_ENV === "production"){
+  const clientDistPath = path.join(__dirname, "..", "..", "frontend", "dist");
+  app.use(express.static(clientDistPath));
+  console.log("Serving static files from:", clientDistPath);
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
-});
-
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK ✅" });
-});
-
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientDistPath, "index.html"));
+  });
+}
 
 connectDB()
   .then(() => {
@@ -60,5 +57,5 @@ connectDB()
     );
   })
   .catch((err) => {
-    console.error("❌ Database connection error:", err.message);
+    console.error("Database connection error:", err.message);
   });

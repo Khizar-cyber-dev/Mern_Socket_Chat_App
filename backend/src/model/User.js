@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String },
-    provider: { type: String, default: "local" }, // "google" | "github" | "local"
+    provider: { type: String, default: "local" },
     providerId: { type: String, default: null },
     avatar: { type: String, default: "" },
   },

@@ -1,3 +1,4 @@
+import { mailOptions, transporter } from '../lib/nodemailer.js';
 import { generateToken, setTokenCookies, verifyToken } from '../lib/Token&Cookies.js';
 import User from '../model/User.js';
 
@@ -38,6 +39,17 @@ export const register = async (req, res) => {
             fullname: newUser.fullname,
             email: newUser.email
         }});
+        try {
+            await transporter.sendMail(mailOptions(newUser));
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            console.error('Email error details:', {
+                code: emailError.code,
+                command: emailError.command,
+                response: emailError.response,
+                responseCode: emailError.responseCode
+            });
+        }
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

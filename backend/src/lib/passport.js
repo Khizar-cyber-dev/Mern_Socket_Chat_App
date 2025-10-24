@@ -49,10 +49,8 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Try email from profile first
         let email = profile.emails?.[0]?.value;
 
-        // Fetch emails if missing
         if (!email) {
           const response = await fetch("https://api.github.com/user/emails", {
             headers: {

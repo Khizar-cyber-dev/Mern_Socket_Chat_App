@@ -10,9 +10,8 @@ const Navbar = () => {
         return "U";
     };
 
-    const handleLogout = () => {
-        logOut();
-        window.location.reload();
+    const handleLogout = async () => {
+        await logOut();
     };
 
     return (

@@ -10,12 +10,14 @@ const App = () => {
   const { checkAuth, user, checkingAuth, allUsers } = useUserStore();
 
   useLayoutEffect(() => {
-    checkAuth(); 
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
 
   useLayoutEffect(() => {
-    allUsers();
-  },[user])
+    if (user) {
+      allUsers();
+    }
+  }, [user, allUsers])
 
   if (checkingAuth) {
     return <div>...Checking Authentication</div>;

@@ -6,6 +6,7 @@ export const useUserStore = create((set, get) => ({
   user: null,
   loading: false,
   checkingAuth: true,
+  AllUsers: null,
 
   register: async ({ fullname, username, email, password, confirmPassword }) => {
     set({ loading: true });
@@ -17,7 +18,7 @@ export const useUserStore = create((set, get) => ({
 
     try {
       const { data } = await axios.post('/auth/register', { fullname, username, email, password });
-      set({ user: data.userData, loading: false });
+      set({ user: data.userData, loading: false, checkingAuth: false });
       toast.success(data.message || "User registered successfully");
     } catch (error) {
       set({ loading: false });
@@ -31,7 +32,7 @@ export const useUserStore = create((set, get) => ({
 
     try {
       const { data } = await axios.post('/auth/login', { username, password });
-      set({ user: data.userData, loading: false });
+      set({ user: data.userData, loading: false, checkingAuth: false });
       toast.success(data.message || "User login successfully");
     } catch (error) {
       set({ loading: false });
@@ -41,20 +42,35 @@ export const useUserStore = create((set, get) => ({
   },
 
   checkAuth: async () => {
+  const { user } = get();
+  if (user) return;
+
   set({ checkingAuth: true });
-   try {
+
+  try {
     const { data } = await axios.get("/auth/me");
     set({ user: data.user, checkingAuth: false });
-   } catch (error) {
-     console.log(error.message);
-     set({ checkingAuth: false, user: null });
-   }
+  } catch (error) {
+    set({ checkingAuth: false, user: null });
+  }
+},
+
+
+  allUsers: async () => {
+    try {
+      set({ loading: true });
+      const { data } = await axios.get("/auth/allUsers");
+      set({ AllUsers: data.users, loading: false });
+    } catch (error) {
+      console.log(error.message);
+      set({ loading: false, AllUsers: null });
+    }
   },
 
   logOut: async () => {
     try {
         await axios.post('/auth/logout');
-        set({ user: null });
+        set({ user: null, checkingAuth: false, users: null });
         toast.success("LogOut SuccesFully.");
     } catch (error) {
         console.log(error);
@@ -63,16 +79,14 @@ export const useUserStore = create((set, get) => ({
   },
 
   refreshToken: async () => {
-		set({ checkingAuth: true });
-		try {
-			const response = await axios.post("/auth/refresh-token");
-			set({ checkingAuth: false });
-			return response.data;
-		} catch (error) {
-			set({ user: null, checkingAuth: false });
-			throw error;
-		}
-	},
+  try {
+    const response = await axios.post("/auth/refresh-token");
+    return response.data;
+  } catch (error) {
+    set({ user: null });
+    throw error;
+  }
+},
 
     handleSocialLogin: async (provider) => {
         set({ loading: true });
@@ -90,28 +104,30 @@ export const useUserStore = create((set, get) => ({
 let refreshPromise = null;
 
 axios.interceptors.response.use(
-	(response) => response,
-	async (error) => {
-		const originalRequest = error.config;
-		if (error.response?.status === 401 && !originalRequest._retry) {
-			originalRequest._retry = true;
+  (res) => res,
+  async (error) => {
+    const originalReq = error.config;
 
-			try {
-				if (refreshPromise) {
-					await refreshPromise;
-					return axios(originalRequest);
-				}
+    if (error.response?.status === 401 && !originalReq._retry) {
+      originalReq._retry = true;
 
-				refreshPromise = useUserStore.getState().refreshToken();
-				await refreshPromise;
-				refreshPromise = null;
+      try {
+        if (refreshPromise) {
+          await refreshPromise;
+          return axios(originalReq);
+        }
 
-				return axios(originalRequest);
-			} catch (refreshError) {
-				useUserStore.getState().logout();
-				return Promise.reject(refreshError);
-			}
-		}
-		return Promise.reject(error);
-	}
+        refreshPromise = useUserStore.getState().refreshToken();
+        await refreshPromise;
+        refreshPromise = null;
+
+        return axios(originalReq);
+      } catch (err) {
+        useUserStore.getState().logOut();
+        return Promise.reject(err);
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );

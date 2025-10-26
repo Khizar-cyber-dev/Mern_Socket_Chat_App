@@ -1,6 +1,7 @@
 import Router from "express";
 import passport from "../lib/passport.js";
 import {
+  allUsers,
   login,
   logout,
   me,
@@ -21,6 +22,7 @@ router.post("/register", register);
 router.post("/logout", logout);
 router.get("/me", authMiddleware, me);
 router.post("/refresh-token", refreshToken);
+router.get("/allUsers", authMiddleware, allUsers);
 
 // Google login
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));

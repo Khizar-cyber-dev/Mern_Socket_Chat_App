@@ -9,14 +9,14 @@ export const login = async (req, res) => {
         if (!user || !user.comparePassword(password)) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        const { accessToken, refreshToken } = generateToken({ userId: user._id });
+        const { accessToken, refreshToken } = generateToken(user._id);
         setTokenCookies(res, accessToken, refreshToken);
         res.json({ message: 'User Login SuccesFully.', userData: {
             _id: user._id,
             username: user.username,
             fullname: user.fullname,
             email: user.email
-        } });
+        }});
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -31,7 +31,7 @@ export const register = async (req, res) => {
         }
         const newUser = new User({ fullname, username, email, password });
         await newUser.save();
-        const { accessToken, refreshToken } = generateToken({ userId: newUser._id });
+        const { accessToken, refreshToken } = generateToken(user._id);
         setTokenCookies(res, accessToken, refreshToken);
         res.status(201).json({ message: 'User registered successfully', userData: {
             _id: newUser._id,
@@ -79,17 +79,20 @@ export const logout = async (req, res) => {
 
 export const refreshToken = (req, res) => {
     try {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) {
+        const token = req.cookies.refreshToken;
+        if (!token) {
             return res.status(401).json({ message: 'No refresh token provided' });
         }
-        const payload = verifyToken(refreshToken, 'refresh');
+
+        const payload = verifyToken(token, 'refresh');
         if (!payload) {
             return res.status(401).json({ message: 'Invalid refresh token' });
         }
-        const { accessToken: newaccessToken } = generateToken({ id: payload.id });
-        setTokenCookies(res, newaccessToken, null);
-        res.json({ accessToken: newaccessToken });
+
+        const { accessToken: newAccessToken } = generateToken(payload.userId);
+        setTokenCookies(res, newAccessToken, token);
+
+        res.json({ accessToken: newAccessToken });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -97,9 +100,21 @@ export const refreshToken = (req, res) => {
 
 export const me = async (req, res) => {
     try{
-        const user = req.body;
+        const user = req.user;
+        console.log(user);
         res.json({ user });
     } catch (error) {
         res.status(500).json({ message: 'Server Error'})
+    }
+}
+
+export const allUsers = async (req, res) => {
+    try {
+        const currentUser = await req.user;
+        const allUsers = await User.find().select("-password");
+        const filteredUsers = allUsers.filter((users) => users._id.toString() !== currentUser._id.toString());
+        res.json({ users: filteredUsers });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" })
     }
 }

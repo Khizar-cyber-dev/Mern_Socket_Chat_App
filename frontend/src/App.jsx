@@ -1,23 +1,35 @@
-import { useEffect } from 'react';
-import Form from './components/Form';
-import { useUserStore } from './store/useUserStore';
+import { useLayoutEffect } from "react";
+import { useUserStore } from "./store/useUserStore";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from "./components/Navbar";
+import Form from './components/Form';
 import Dashboard from './pages/Dashboard';
+import Sidebar from "./components/Sidebar";
 
-export const App = () => {
-  const { checkAuth, user, checkingAuth } = useUserStore();
-  useEffect(() => {
-    checkAuth()
-  },[checkAuth])
+const App = () => {
+  const { checkAuth, user, checkingAuth, allUsers } = useUserStore();
 
-  if(checkingAuth) return "...Loading";
+  useLayoutEffect(() => {
+    checkAuth(); 
+  }, []);
+
+  useLayoutEffect(() => {
+    allUsers();
+  },[user])
+
+  if (checkingAuth) {
+    return <div>...Checking Authentication</div>;
+  }
+
   return (
-     <Router>
+    <Router>
+      <Navbar />
+      <Sidebar />
       <Routes>
-        <Route path='/' element={user ? <Dashboard /> : <Form />}/>
+        <Route path="/" element={user ? <Dashboard /> : <Form />} />
       </Routes>
-     </Router>
-  )
-}
+    </Router>
+  );
+};
 
-export default App
+export default App;

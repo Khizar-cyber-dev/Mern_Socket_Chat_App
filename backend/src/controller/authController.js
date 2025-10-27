@@ -112,9 +112,7 @@ export const me = async (req, res) => {
 export const allUsers = async (req, res) => {
     try {
         const currentUser = await req.user;
-        console.log("currentUser",currentUser);
         const allUsers = await User.find().select("-password");
-        console.log("allUsers",allUsers);
         const filteredUsers = allUsers.filter((users) => users._id.toString() !== currentUser._id.toString());
         res.status(200).json({ users: filteredUsers });
     } catch (error) {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
-import axios from '../lib/axios';
+import axios, { SERVER_URL } from '../lib/axios';
 import { toast } from 'react-hot-toast';
 
 const useUserStore = create(devtools(
@@ -96,6 +96,17 @@ const useUserStore = create(devtools(
       throw err;
     }
   },
+
+  handleSocialLogin: async (provider) => {
+        set({ loading: true });
+        try {
+            const oAuthUrl = `${SERVER_URL}/api/auth/${provider}`;
+            window.location.href = oAuthUrl;
+        } catch (error) {
+            console.log(error);
+            toast.error("Social login failed. Please try again.");
+        }
+      },
 })));
 
 let refreshPromise = null;
@@ -135,7 +146,6 @@ axios.interceptors.response.use(
 export { useUserStore };
 
 
-// Enable devtools in development
 if (process.env.NODE_ENV === 'development') {
   mountStoreDevtool('UserStore', useUserStore);
 }

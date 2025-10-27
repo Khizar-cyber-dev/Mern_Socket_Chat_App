@@ -6,9 +6,10 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Form from "./components/Form";
 import Loader from './components/Loader';
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
-  const { checkAuth, user, checkingAuth, fetchAllUsers, allUsersData } = useUserStore();
+  const { checkAuth, user, checkingAuth, fetchAllUsers } = useUserStore();
 
   useEffect(() => {
     checkAuth();
@@ -26,10 +27,8 @@ const App = () => {
       {user && <Sidebar />}
 
       <Routes>
-         <Route
-          path="/"
-          element={user ? <Dashboard /> : <Form />}
-        />
+         <Route path='/' element={<Form />} />
+         <Route path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

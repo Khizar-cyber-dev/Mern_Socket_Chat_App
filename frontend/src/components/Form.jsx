@@ -3,8 +3,10 @@ import styled from 'styled-components';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
 import { useUserStore } from '../store/useUserStore';
+import { useNavigate } from 'react-router-dom';
 
 const Form = () => {
+  const navigate = useNavigate();
   const { register, login, handleSocialLogin } = useUserStore();
   const [isRegister, setIsRegister] = useState(true);
   const [formData, setFormData] = useState({
@@ -24,8 +26,11 @@ const Form = () => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
-  if (isRegister) await register(formData);
-  else await login(formData);
+  if (isRegister){ 
+    await register(formData); navigate('/dashboard');
+  } else{ 
+    await login(formData); navigate('/dashboard');
+  }
 };
 
 

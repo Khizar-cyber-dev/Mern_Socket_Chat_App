@@ -106,7 +106,15 @@ const useUserStore = create(devtools(
             console.log(error);
             toast.error("Social login failed. Please try again.");
         }
-      },
+    try {
+      const { data } = await axios.post("/auth/refresh-token");
+      return data;
+    } catch (err) {
+      get().setUser(null);
+      set({ checkingAuth: false });
+      throw err;
+    }
+  }
 })));
 
 let refreshPromise = null;

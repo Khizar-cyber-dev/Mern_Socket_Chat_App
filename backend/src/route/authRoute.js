@@ -7,6 +7,7 @@ import {
   me,
   refreshToken,
   register,
+  updateProfile,
 } from "../controller/authController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { generateToken, setTokenCookies } from "../lib/Token&Cookies.js";
@@ -23,6 +24,7 @@ router.post("/logout", logout);
 router.get("/me", authMiddleware, me);
 router.post("/refresh-token", refreshToken);
 router.get("/allUsers", authMiddleware, allUsers);
+router.post('/updateProfile', authMiddleware, updateProfile);
 
 // Google login
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));

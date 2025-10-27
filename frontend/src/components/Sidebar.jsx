@@ -1,13 +1,9 @@
-import React from 'react'
-import { useUserStore } from '../store/useUserStore'
+import { useUserStore } from '../store/useUserStore';
 
 const Sidebar = () => {
-    const { AllUsers } = useUserStore();
+    const { allUsersData } = useUserStore();
   return (
-    // <div>{AllUsers.map((user) => <p key={user._id}>{user.fullname}</p>)}</div>
-    <div>
-        
-    </div>
+    <div>{allUsersData.map((user) => <p key={user._id}>{user.fullname}</p>)}</div>
   )
 }
 

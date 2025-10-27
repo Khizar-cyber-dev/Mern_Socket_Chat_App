@@ -1,6 +1,7 @@
 import { mailOptions, transporter } from '../lib/nodemailer.js';
 import { generateToken, setTokenCookies, verifyToken } from '../lib/Token&Cookies.js';
 import User from '../model/User.js';
+import cloudinary from '../lib/cloudinary.js';
 
 export const login = async (req, res) => {
     const { username, password } = req.body;
@@ -20,7 +21,7 @@ export const login = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
-};
+}
 
 export const register = async (req, res) => {
     try {
@@ -111,10 +112,64 @@ export const me = async (req, res) => {
 export const allUsers = async (req, res) => {
     try {
         const currentUser = await req.user;
+        console.log("currentUser",currentUser);
         const allUsers = await User.find().select("-password");
+        console.log("allUsers",allUsers);
         const filteredUsers = allUsers.filter((users) => users._id.toString() !== currentUser._id.toString());
-        res.json({ users: filteredUsers });
+        res.status(200).json({ users: filteredUsers });
     } catch (error) {
         res.status(500).json({ message: "Server error" })
+    }
+}
+
+export const updateProfile = async (req, res) => {
+    try {
+        const { username, fullname } = req.body;
+        const user = await User.findById(req.user._id);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update basic info if provided
+        if (username) user.username = username;
+        if (fullname) user.fullname = fullname;
+
+        // Handle avatar upload if provided
+        if (req.file) {
+            // Delete old avatar if exists
+            if (user.avatar) {
+                // Extract public_id from the URL (Cloudinary provides this in the format: v1234567890/...)
+                const publicId = user.avatar.split('/').pop().split('.')[0];
+                await cloudinary.uploader.destroy(`avators/${publicId}`);
+            }
+
+            // Upload new avatar
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: "avators",
+            });
+
+            user.avatar = result.secure_url;
+        }
+
+        await user.save();
+        
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            userData: {
+                _id: user._id,
+                username: user.username,
+                fullname: user.fullname,
+                email: user.email,
+                avatar: user.avatar
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ 
+            message: 'Error updating profile',
+            error: error.message 
+        });
     }
 }

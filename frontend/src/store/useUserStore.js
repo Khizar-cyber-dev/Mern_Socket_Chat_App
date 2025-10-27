@@ -1,116 +1,102 @@
 import { create } from 'zustand';
-import axios, { SERVER_URL } from '../lib/axios';
+import { devtools } from 'zustand/middleware';
+import { mountStoreDevtool } from 'simple-zustand-devtools';
+import axios from '../lib/axios';
 import { toast } from 'react-hot-toast';
 
-export const useUserStore = create((set, get) => ({
+const useUserStore = create(devtools(
+  (set, get) => ({
   user: null,
   loading: false,
   checkingAuth: true,
-  AllUsers: null,
+  allUsersData: [],
 
-  register: async ({ fullname, username, email, password, confirmPassword }) => {
+  setUser: (userData) => {
+    set({ user: userData });
+    if (userData) {
+      localStorage.setItem("user", JSON.stringify(userData));
+    } else {
+      localStorage.removeItem("user");
+    }
+  },
+
+  register: async (credentials) => {
     set({ loading: true });
-
-    if (password !== confirmPassword) {
-      set({ loading: false });
-      return toast.error("Passwords do not match");
-    }
-
     try {
-      const { data } = await axios.post('/auth/register', { fullname, username, email, password });
-      set({ user: data.userData, loading: false, checkingAuth: false });
-      toast.success(data.message || "User registered successfully");
+      const { data } = await axios.post("/auth/register", credentials);
+      get().setUser(data.userData);
+      toast.success(data.message);
     } catch (error) {
-      set({ loading: false });
-      console.error("Error:", error);
-      toast.error(error.response?.data?.message || "An error occurred");
+      toast.error(error.response?.data?.message || "Registration failed");
     }
+    set({ loading: false, checkingAuth: false });
   },
 
   login: async ({ username, password }) => {
     set({ loading: true });
-
     try {
-      const { data } = await axios.post('/auth/login', { username, password });
-      set({ user: data.userData, loading: false, checkingAuth: false });
-      toast.success(data.message || "User login successfully");
+      const { data } = await axios.post("/auth/login", { username, password });
+      get().setUser(data.userData);
+      toast.success(data.message);
     } catch (error) {
-      set({ loading: false });
-      console.error("Error:", error);
-      toast.error(error.response?.data?.message || "An error occurred");
+      toast.error(error.response?.data?.message || "Login failed");
     }
+    set({ loading: false, checkingAuth: false });
   },
 
   checkAuth: async () => {
-  const { user } = get();
-  if (user) return;
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      set({ user: JSON.parse(storedUser) });
+    }
 
-  set({ checkingAuth: true });
-
-  try {
-    const { data } = await axios.get("/auth/me");
-    set({ user: data.user, checkingAuth: false });
-  } catch (error) {
-    set({ checkingAuth: false, user: null });
-  }
-},
-
-
-  allUsers: async () => {
     try {
-      set({ loading: true });
+      const { data } = await axios.get("/auth/me");
+      get().setUser(data.user);
+    } catch {
+      get().setUser(null);
+    }
+
+    set({ checkingAuth: false });
+  },
+
+  fetchAllUsers: async () => {
+    try {
       const { data } = await axios.get("/auth/allUsers");
-      set({ AllUsers: data.users, loading: false });
-    } catch (error) {
-      console.log(error.message);
-      set({ loading: false, AllUsers: null });
+      set({ allUsersData: data.users });
+      console.log(data.users);
+    } catch {
+      set({ allUsersData: [] });
+      console.log("Other users not found");
     }
   },
 
   logOut: async () => {
     try {
-        await axios.post('/auth/logout');
-        set({ 
-            user: null, 
-            checkingAuth: false, 
-            AllUsers: null,
-            loading: false
-        });
-        toast.success("Logged out successfully");
-    } catch (error) {
-        console.error("Logout error:", error);
-        set({ 
-            user: null, 
-            checkingAuth: false, 
-            AllUsers: null,
-            loading: false
-        });
-        toast.error("Logged out successfully");
-    }
+      await axios.post("/auth/logout");
+    } catch {}
+
+    get().setUser(null);
+    set({
+      checkingAuth: false,
+      loading: false,
+      allUsersData: [],
+    });
+
+    toast.success("Logged out successfully");
   },
 
   refreshToken: async () => {
-  try {
-    const response = await axios.post("/auth/refresh-token");
-    return response.data;
-  } catch (error) {
-    set({ user: null });
-    throw error;
-  }
-},
-
-    handleSocialLogin: async (provider) => {
-        set({ loading: true });
-        try {
-            const oAuthUrl = `${SERVER_URL}/api/auth/${provider}`;
-            window.location.href = oAuthUrl;
-        } catch (error) {
-            console.log(error);
-            toast.error("Social login failed. Please try again.");
-        }
+    try {
+      const { data } = await axios.post("/auth/refresh-token");
+      return data;
+    } catch (err) {
+      get().setUser(null);
+      set({ checkingAuth: false });
+      throw err;
     }
-}));
-
+  },
+})));
 
 let refreshPromise = null;
 
@@ -122,18 +108,21 @@ axios.interceptors.response.use(
     if (error.response?.status === 401 && !originalReq._retry) {
       originalReq._retry = true;
 
-      try {
-        if (refreshPromise) {
-          await refreshPromise;
-          return axios(originalReq);
-        }
+      if (originalReq.url.includes("/auth/me")) {
+        useUserStore.getState().setUser(null);
+        useUserStore.setState({ checkingAuth: false });
+        return Promise.reject(error);
+      }
 
-        refreshPromise = useUserStore.getState().refreshToken();
+      try {
+        if (!refreshPromise) {
+          refreshPromise = useUserStore.getState().refreshToken();
+        }
         await refreshPromise;
         refreshPromise = null;
-
         return axios(originalReq);
       } catch (err) {
+        refreshPromise = null;
         useUserStore.getState().logOut();
         return Promise.reject(err);
       }
@@ -142,3 +131,11 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export { useUserStore };
+
+
+// Enable devtools in development
+if (process.env.NODE_ENV === 'development') {
+  mountStoreDevtool('UserStore', useUserStore);
+}

@@ -35,7 +35,7 @@ router.get(
   (req, res) => {
     const { accessToken, refreshToken } = generateToken({ id: req.user._id });
     setTokenCookies(res, accessToken, refreshToken);
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+    res.redirect(`${process.env.CLIENT_URL}/`);
   }
 );
 
@@ -50,7 +50,7 @@ router.get(
 
     const { accessToken, refreshToken } = generateToken({ id: req.user._id });
     setTokenCookies(res, accessToken, refreshToken);
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+    res.redirect(`${process.env.CLIENT_URL}/`);
   }
 );
 

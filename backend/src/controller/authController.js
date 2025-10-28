@@ -32,14 +32,9 @@ export const register = async (req, res) => {
         }
         const newUser = new User({ fullname, username, email, password });
         await newUser.save();
-        const { accessToken, refreshToken } = generateToken(user._id);
+        const { accessToken, refreshToken } = generateToken(newUser._id);
         setTokenCookies(res, accessToken, refreshToken);
-        res.status(201).json({ message: 'User registered successfully', userData: {
-            _id: newUser._id,
-            username: newUser.username,
-            fullname: newUser.fullname,
-            email: newUser.email
-        }});
+
         try {
             await transporter.sendMail(mailOptions(newUser));
         } catch (emailError) {
@@ -54,6 +49,16 @@ export const register = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
+
+    return res.status(201).json({ 
+            message: 'User registered successfully', 
+            userData: {
+                _id: newUser._id,
+                username: newUser.username,
+                fullname: newUser.fullname,
+                email: newUser.email
+            },
+    });
 }
 
 export const logout = async (req, res) => {
@@ -102,7 +107,6 @@ export const refreshToken = (req, res) => {
 export const me = async (req, res) => {
     try{
         const user = req.user;
-        console.log(user);
         res.json({ user });
     } catch (error) {
         res.status(500).json({ message: 'Server Error'})

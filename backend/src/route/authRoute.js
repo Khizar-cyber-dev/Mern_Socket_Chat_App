@@ -12,10 +12,14 @@ import {
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { generateToken, setTokenCookies } from "../lib/Token&Cookies.js";
 import dotenv from 'dotenv';
+import { arcjetMiddleware } from "../middleware/arcjetMiddleware.js";
 
 dotenv.config();
 
 const router = Router();
+
+// Arcjet Middleware
+router.use(arcjetMiddleware);
 
 // Local Auth
 router.post("/login", login);
